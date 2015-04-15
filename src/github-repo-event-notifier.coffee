@@ -2,6 +2,8 @@ url           = require('url')
 querystring   = require('querystring')
 eventActions  = require('./event-actions/all')
 eventTypesRaw = process.env['HUBOT_GITHUB_EVENT_NOTIFIER_TYPES']
+milestoneToRoomMap = JSON.parse(process.env['HUBOT_GITHUB_MILESTONES_ROOMS']||{})
+
 eventTypes    = []
 
 if eventTypesRaw?
@@ -21,7 +23,11 @@ module.exports = (robot) ->
     try
       if eventType in eventTypes
         announceRepoEvent data, eventType, (what) ->
-          robot.messageRoom room, what
+          if team_room = milestoneToRoomMap[data.issue?.milestone?.html_url]
+            room = team_room
+            robot.messageRoom room, what
+          else
+            console.log "Ignoring #{eventType} as it has non mapped milestone: '#{team_room}'"
       else
         console.log "Ignoring #{eventType} event as it's not allowed."
     catch error
